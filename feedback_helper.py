@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import torch
 from scipy import signal
@@ -11,7 +13,7 @@ from TMSiSDK.device.tmsi_device_enums import MeasurementType
 class FeedbackHelper:
     def __init__(self, model_path, dev):
         self.classifier = classifier.Classifier(model_path)
-        self.mirest = 0
+        self.restmi = 0
         self.mimm = 0
 
         self.sampling_frequency = dev.get_device_sampling_frequency()
@@ -56,9 +58,9 @@ class FeedbackHelper:
         segment = segment[:, :160]
         segment = torch.tensor(segment).float().unsqueeze(0).unsqueeze(0)
 
-        self.mirest, self.mimm = self.classifier.predict(segment)
+        self.restmi, self.mimm = self.classifier.predict(segment)
 
-        return self.mirest, self.mimm
+        return self.restmi, self.mimm
 
     def close(self):
         self.consumer.close()

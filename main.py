@@ -1,7 +1,11 @@
 import sys
+import threading
 import time
 import tkinter as tk
+
+from TMSiFileFormats.file_writer import FileFormat, FileWriter
 from TMSiGui.gui import Gui
+from experiment import Experiment
 from feedback_app import FeedbackApp
 from feedback_helper import FeedbackHelper
 from TMSiSDK.device import ChannelType
@@ -13,6 +17,9 @@ from TMSiBackend.plotter.impedance_plotter_helper import ImpedancePlotterHelper
 from PySide6.QtWidgets import *
 
 if __name__ == "__main__":
+    subject = 1
+    session = 1
+
     try:
         # Execute a device discovery. This returns a list of device-objects for every discovered device.
         TMSiSDK().discover(dev_type = DeviceType.saga, dr_interface = DeviceInterfaceType.docked, ds_interface = DeviceInterfaceType.usb)
@@ -27,10 +34,10 @@ if __name__ == "__main__":
                     dev.open()
                     break
 
-        # Set the sample rate of the BIP and AUX channels to 2000 Hz
-        dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Binary,  channel_type = ChannelType.BIP, channel_divider =2)
-        dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Binary, channel_type = ChannelType.AUX, channel_divider = 2)
-        dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Binary,  channel_type = ChannelType.UNI, channel_divider =4)
+        # Set the sample rate of the BIP, UNI and AUX channels to 1000 Hz
+        dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal,  channel_type = ChannelType.BIP, channel_divider = 4)
+        dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal, channel_type = ChannelType.AUX, channel_divider = 4)
+        dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal,  channel_type = ChannelType.UNI, channel_divider = 4)
 
         # Enable BIP 01, BIP 02, AUX 1-1, 1-2 and 1-3, and 18 UNI channels
         AUX_list = [0,1,2]
@@ -90,39 +97,48 @@ if __name__ == "__main__":
             if fs != 'base_sampling_rate':
                 print('{0} = {1} Hz'.format(fs, fs_info[fs]))
 
+        dev.export_configuration(join("config", "saga_config_first_session.xml"))
 
         # Check if there is already a plotter application in existence
-        app = QApplication.instance()
-
-        # Initialise the plotter application if there is no other plotter application
-        if not app:
-            app = QApplication(sys.argv)
-
-        # Initialise the helper
-        plotter_helper = ImpedancePlotterHelper(device=dev,
-                                                is_head_layout=True,
-                                                file_storage = join("measurements","example_EEG_workflow"))
-        # Define the GUI object and show it
-        gui = Gui(plotter_helper = plotter_helper)
-        # Enter the event loop
-        app.exec()
+        # app = QApplication.instance()
+        #
+        # # Initialise the plotter application if there is no other plotter application
+        # if not app:
+        #     app = QApplication(sys.argv)
+        #
+        # # Initialise the helper
+        # plotter_helper = ImpedancePlotterHelper(device=dev,
+        #                                         is_head_layout=True,
+        #                                         file_storage = join(f"measurements","impedance measurement"))
+        # # Define the GUI object and show it
+        # gui = Gui(plotter_helper = plotter_helper)
+        # # Enter the event loop
+        # app.exec()
 
         # Pause for a while to properly close the GUI after completion
-        print('\n Wait for a bit while we close the plot... \n')
+        print('\n Wait to close the plot... \n')
         time.sleep(1)
 
-        subject = 1
+        # Initialise the desired file-writer class and state its file path
+        file_writer = FileWriter(FileFormat.poly5, join("measurements",f"subject_{subject}_session{session}.poly5"))
+
+        # Define the handle to the device
+        file_writer.open(dev)
 
         feedback_helper = FeedbackHelper(model_path=join("classifiers", str(subject)), dev=dev)
         root = tk.Tk()
-        myapp = FeedbackApp(root, feedback_helper)
-        myapp.mainloop()
+        feedback_app = FeedbackApp(root, feedback_helper)
 
+        print("Start Experiment")
+        experiment = Experiment(subject, session, feedback_app, run_time=10, break_time=3, prep_time=2, nruns=8)
+        experiment.start()
+        feedback_app.mainloop()
+
+        experiment.close()
         feedback_helper.close()
-        # root.destroy()
 
         # Close the file writer after GUI termination
-        # file_writer.close()
+        file_writer.close()
 
         # Close the connection to the SAGA device
         dev.close()
