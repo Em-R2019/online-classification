@@ -1,0 +1,21 @@
+from models.EEGNet import EEGNetModel as EEGNet
+import torch
+from os.path import join
+
+class Classifier:
+    def __init__(self, model_path):
+        self.model_mimm = EEGNet(chans=18, classes=1, time_points=160, temp_kernel=32,
+                                 f1=16, f2=32, d=2, pk1=8, pk2=16, dropout_rate=0.5, max_norm1=1, max_norm2=0.25)
+
+        state_dict = torch.load(join(model_path, "mimm.pt"), weights_only=False, map_location=torch.device('cpu'))
+        self.model_mimm.load_state_dict(state_dict, strict=False)
+        self.model_mimm.eval()
+
+        self.model_mirest = EEGNet(chans=18, classes=1, time_points=160, temp_kernel=32,
+                                   f1=16, f2=32, d=2, pk1=8, pk2=16, dropout_rate=0.5, max_norm1=1, max_norm2=0.25)
+        state_dict = torch.load(join(model_path, "mirest.pt"), weights_only=False, map_location=torch.device('cpu'))
+        self.model_mirest.load_state_dict(state_dict, strict=False)
+        self.model_mirest.eval()
+
+    def predict(self, x):
+        return self.model_mirest(x).item(), self.model_mimm(x).item()
