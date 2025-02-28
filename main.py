@@ -1,5 +1,4 @@
 import sys
-import threading
 import time
 import tkinter as tk
 
@@ -32,6 +31,7 @@ if __name__ == "__main__":
                 if dev.get_dr_interface() == DeviceInterfaceType.docked:
                     # Open the connection to SAGA
                     dev.open()
+                    print(f"Connected to {dev.get_device_name()}")
                     break
 
         # Set the sample rate of the BIP, UNI and AUX channels to 1000 Hz
@@ -77,7 +77,6 @@ if __name__ == "__main__":
                 enable_channels.append(idx)
             else :
                 disable_channels.append(idx)
-        print(enable_channels)
 
         dev.set_device_active_channels(enable_channels, True)
         dev.set_device_active_channels(disable_channels, False)
@@ -100,20 +99,20 @@ if __name__ == "__main__":
         dev.export_configuration(join("config", "saga_config_first_session.xml"))
 
         # Check if there is already a plotter application in existence
-        # app = QApplication.instance()
-        #
-        # # Initialise the plotter application if there is no other plotter application
-        # if not app:
-        #     app = QApplication(sys.argv)
-        #
-        # # Initialise the helper
-        # plotter_helper = ImpedancePlotterHelper(device=dev,
-        #                                         is_head_layout=True,
-        #                                         file_storage = join(f"measurements","impedance measurement"))
-        # # Define the GUI object and show it
-        # gui = Gui(plotter_helper = plotter_helper)
-        # # Enter the event loop
-        # app.exec()
+        app = QApplication.instance()
+
+        # Initialise the plotter application if there is no other plotter application
+        if not app:
+            app = QApplication(sys.argv)
+
+        # Initialise the helper
+        plotter_helper = ImpedancePlotterHelper(device=dev,
+                                                is_head_layout=True,
+                                                file_storage = join(f"measurements","impedance measurement"))
+        # Define the GUI object and show it
+        gui = Gui(plotter_helper = plotter_helper)
+        # Enter the event loop
+        app.exec()
 
         # Pause for a while to properly close the GUI after completion
         print('\n Wait to close the plot... \n')
@@ -130,8 +129,9 @@ if __name__ == "__main__":
         feedback_app = FeedbackApp(root, feedback_helper)
 
         print("Start Experiment")
-        experiment = Experiment(subject, session, feedback_app, run_time=10, break_time=3, prep_time=2, nruns=8)
+        experiment = Experiment(subject, session, feedback_app, file_writer, run_time=5, break_time=3, prep_time=2, nruns=2)
         experiment.start()
+
         feedback_app.mainloop()
 
         experiment.close()
