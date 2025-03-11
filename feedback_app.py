@@ -1,7 +1,6 @@
-import threading
+import math
 from tkinter import Tk, ttk
 import tkinter as tk
-
 
 class FeedbackApp(ttk.Frame):
     def __init__(self, window, feedback_helper):
@@ -11,75 +10,79 @@ class FeedbackApp(ttk.Frame):
         self.pack(fill="both", expand=True)
 
         # self.window.attributes('-fullscreen', True)
-        self.window.geometry("800x800")
+        self.window.geometry("1300x1300")
         self.window.title("Feedback application")
 
-        self.canvas = tk.Canvas(window, width=800, height=800)
+        self.canvas = tk.Canvas(window, width=1300, height=1300)
 
-        self.mi_height = 100
-        self.rest_height = 100
+        self.mimm_height = 0.
+        self.restmi_height = 700.
 
-        self.mi_bar = self.canvas.create_rectangle(0, 0, 250, -self.mi_height, fill='red')
-        self.canvas.move(self.mi_bar, 450, 750)
+        self.mi_bar = self.canvas.create_rectangle(0, 0, 250, -self.mimm_height, fill='red')
+        self.canvas.move(self.mi_bar, 700, 850)
 
-        self.rest_bar = self.canvas.create_rectangle(0, 0, 250, -self.rest_height, fill='blue')
-        self.canvas.move(self.rest_bar, 150, 750)
-
-        # self.canvas.create_text(100,10,font="Times 20 italic bold",
-        #                         text="IMAGINE")
+        self.rest_bar = self.canvas.create_rectangle(0, 0, 250, -self.restmi_height, fill='blue')
+        self.canvas.move(self.rest_bar, 350, 850)
 
         self.canvas.pack(fill="both", side="bottom", expand=True)
 
         self.task = "Break"
-        self.symbol = self.canvas.create_text(400, 10, font="Times 20 italic bold", text="o")
+        self.symbol = self.canvas.create_text(650, 50, font=('Helvetica', '24', 'bold'), text="o")
 
         self.give_feedback = False
-
         self.count = 0 # debug
-        self.update()
+        self.continue_update = True
 
     def update(self):
-        self.helper.update()
+        if self.give_feedback and self.helper.update() is not None:
+            restmi, mimm = self.helper.update()
 
-        self.mi_height = 0
-        self.rest_height = 0
+            self.restmi_height = 700 * restmi
 
-        if self.helper.restmi > 0.5:
-            self.mi_height = 700 * (self.helper.restmi - 0.5) * (self.helper.mimm + 0.1) / 1.1
-            print(f"MI detected, output: mirest={self.helper.restmi:.3f}, mimm={self.helper.mimm:.3f}")
-        else:
-            self.rest_height = 700 * (1 - self.helper.restmi)
-            print(f"No MI detected, output: mirest={self.helper.restmi:.3f}")
+            if self.task == "MI" and not self.helper.traditional:
+                self.mimm_height = 700 * (1 - (1 / (1 + math.e ** (-8 * (mimm - .5)))))
+            else:
+                self.mimm_height = self.restmi_height
 
-        self.mi_height =+ self.count  # debug
-        self.count += 1 # debug
+            print(f"\routput: restmi={restmi:.3f}, mimm={mimm:.3f}", end='')
 
+            # self.mimm_height =+ self.count  # debug
+            # self.count += 1 # debug
+
+        elif self.helper.calibrating:
+            self.mimm_height += 1.2
+            self.restmi_height -= 1.2
         self.redraw()
-        self.master.after(50, self.update)
+        if self.continue_update:
+            self.window.after(50, self.update)
+        else:
+            self.close()
 
     def redraw(self):
         self.canvas.delete(self.mi_bar)
         self.canvas.delete(self.rest_bar)
-        if self.give_feedback:
-            self.mi_bar = self.canvas.create_rectangle(0, 0, 200, -self.mi_height, fill='red')
-            self.canvas.move(self.mi_bar, 450, 750)
+        if self.give_feedback or self.helper.calibrating:
+            self.mi_bar = self.canvas.create_rectangle(0, 0, 250, -self.mimm_height, fill='red')
+            self.canvas.move(self.mi_bar, 700, 850)
 
-            self.rest_bar = self.canvas.create_rectangle(0, 0, 200, -self.rest_height, fill='blue')
-            self.canvas.move(self.rest_bar, 150, 750)
+            self.rest_bar = self.canvas.create_rectangle(0, 0, 250, -self.restmi_height, fill='blue')
+            self.canvas.move(self.rest_bar, 350, 850)
 
 
     def set_task(self, task):
         self.task = task
         if task == "MI":
             self.canvas.delete(self.symbol)
-            self.symbol = self.canvas.create_text(400, 10, font="Times 20 italic bold", text=">")
+            self.symbol = self.canvas.create_text(650, 50, font=('Helvetica', '24', 'bold'), text="+")
         elif task == "Rest":
             self.canvas.delete(self.symbol)
-            self.symbol = self.canvas.create_text(400, 10, font="Times 20 italic bold", text="x")
+            self.symbol = self.canvas.create_text(650, 50, font=('Helvetica', '24', 'bold'), text="-")
         elif task == "Break":
             self.canvas.delete(self.symbol)
-            self.symbol = self.canvas.create_text(400, 10, font="Times 20 italic bold", text="o")
+            self.symbol = self.canvas.create_text(650, 50, font=('Helvetica', '24', 'bold'), text="o")
         else:
             raise ValueError(f"Unknown task: {task}")
 
-
+    def close(self):
+        self.window.quit()
+        self.window.destroy()

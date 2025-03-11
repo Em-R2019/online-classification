@@ -1,10 +1,6 @@
 import numpy as np
 from scipy import signal
 
-from models.EEGNet import EEGNetModel as EEGNet
-import torch
-from os.path import join
-
 class TraditionalClassifier:
     def predict(self, x, fs):
         c3 = x[0] - np.mean(x[1:, :], axis=0)

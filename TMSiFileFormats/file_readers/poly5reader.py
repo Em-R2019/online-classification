@@ -376,3 +376,4 @@ class Channel:
         
 if __name__ == "__main__":
     data = Poly5Reader()
+    print(data.samples)
