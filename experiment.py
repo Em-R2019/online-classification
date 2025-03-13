@@ -8,13 +8,14 @@ from TMSiFileFormats.file_writer import FileWriter, FileFormat
 
 
 class Experiment:
-    def __init__(self, dev, subject, session, feedback_app, session_path, trial_time, break_time, prep_time, pause_time, ntrials, nruns):
+    def __init__(self, dev, subject, session, feedback_app, session_path, practice, trial_time, break_time, prep_time, pause_time, ntrials, nruns):
         self.subject = subject
         self.session = session
         self.label = "no_label"
         self.trial_time = trial_time
         self.break_time = break_time
         self.prep_time = prep_time
+        assert pause_time > 4
         self.pause_time = pause_time
         assert ntrials % 2 == 0  # ntrials must be even
         self.ntrials = ntrials
@@ -25,6 +26,7 @@ class Experiment:
         self.annotations = []
         self.tasks = ["MI"]*int(self.ntrials/2) + ["Rest"]*int(self.ntrials/2)
         self.dev = dev
+        self.practice = practice
 
         self.thread = threading.Thread(target=self.loop)
 
@@ -37,37 +39,60 @@ class Experiment:
         print("Input experiment label and start experiment")
         self.label = input()
 
-        if self.feedback_app.helper.traditional and (self.label == "feedback" or self.label == "pope"):
+        if self.feedback_app.helper.traditional and ("feedback" in self.label.lower() or "pope" in self.label.lower()):
+            self.countdown("calibration")
             try:
-                self.annotations.append([datetime.now().strftime('%H:%M:%S'), "start calibration"])
+                self.feedback_app.set_task("Break")
                 self.feedback_app.helper.calibrate()
-                self.annotations.append([datetime.now().strftime('%H:%M:%S'), "end calibration"])
-                self.save("cal")
             except Exception as e:
                 print(e)
                 return
 
+        if self.practice:
+            self.text("Start practice", 3)
+            practice_tasks = ["MI", "Rest"]
+            print("Start practice")
+            self.countdown("practice")
+            for j in range(len(practice_tasks)):
+                if self.go:
+                    self.trial(practice_tasks[j], None, j)
+                else:
+                    return
+
+            self.text("End of practice", 3)
+            self.text("˄ = move or imagine \n˅ = relax \no = break", 0)
+
+            print("\nPress enter to start experiment")
+            input()
+
+        self.text("Start experiment", 2)
         for i in range(self.nruns):
             if self.go:
                 random.shuffle(self.tasks)
+
                 print("start filewriter: " + datetime.now().strftime('%H:%M:%S'))
                 file_writer = FileWriter(FileFormat.poly5, join(self.session_path, f"S{self.subject}_Session{self.session}.poly5"))
                 file_writer.open(self.dev)
-                print("Start Run " + str(i))
+
+                print("Start Run " + str(i+1))
+                self.countdown("run " + str(i+1))
+
                 for j in range(self.ntrials):
                     if self.go:
                         self.trial(self.tasks[j], i, j)
                     else:
                         self.save(i)
                         return
+
                 file_writer.close()
                 self.save(i)
             else:
                 return
             if i < self.nruns - 1:
-                time.sleep(self.pause_time)
+                self.text("Break", self.pause_time-4)
 
-        print("End Experiment" + self.label)
+        print("End experiment " + self.label)
+        self.text("End of experiment", 0)
         return
 
     def trial(self, task, run, trial):
@@ -75,14 +100,17 @@ class Experiment:
             self.feedback_app.set_task(task)
             time.sleep(self.prep_time)
 
-            if "feedback" in self.label or self.label == "pope":
+            if "feedback" in self.label.lower() or "pope" in self.label.lower():
                 self.feedback_app.give_feedback = True
-            print("\nStart Trial " + str(trial) + " Task: " + task)
-            self.annotations.append([datetime.now().strftime('H:%M:%S'), task])
+            elif "MM" in self.label.upper() or "MI" in self.label.upper():
+                self.feedback_app.dummy_feedback = True
+            print("\nStart Trial " + str(trial + 1) + " Task: " + task)
+            self.annotations.append([datetime.now().strftime('%H:%M:%S'), task])
             time.sleep(self.trial_time)
 
             self.feedback_app.set_task("Break")
             self.feedback_app.give_feedback = False
+            self.feedback_app.dummy_feedback = False
             print("\nBreak")
             self.annotations.append([datetime.now().strftime('%H:%M:%S'), "Break"])
             time.sleep(self.break_time)
@@ -99,7 +127,16 @@ class Experiment:
         print("Save annotations")
         with open(join(self.session_path, f'annotations_R{run}_{self.label}.txt'), 'a') as f:
             for annotation in self.annotations:
-                if self.label == "MM" and annotation[1] == "MI":
+                if self.label.upper() == "MM" and annotation[1] == "MI":
                     annotation[1] = "MM"
                 f.write(f"{annotation}\n")
         self.annotations = []
+
+    def text(self, text, t):
+        self.feedback_app.symbol = text
+        time.sleep(t)
+
+    def countdown(self, part):
+        self.text(f"Start {part} in 3", 1)
+        self.text(f"Start {part} in 2", 1)
+        self.text(f"Start {part} in 1", 2)

@@ -25,7 +25,7 @@ if __name__ == "__main__":
                     break
 
         # change_config(dev)
-        dev.import_configuration(join("config", "saga_config_first_session.xml"))
+        dev.import_configuration(join("config", "saga_config.xml"))
 
         print("Input subject number:")
         subject = input()
@@ -40,11 +40,11 @@ if __name__ == "__main__":
         if not exists(session_path):
             makedirs(session_path)
 
-        feedback_helper = FeedbackHelper(model_path=join("classifiers", str(subject)), dev=dev, traditional=traditional)
+        feedback_helper = FeedbackHelper(model_path=join("classifiers", f"S{subject}"), dev=dev, traditional=traditional)
         root = tk.Tk()
         feedback_app = FeedbackApp(root, feedback_helper)
 
-        experiment = Experiment(dev, subject, session, feedback_app, session_path, trial_time=20, break_time=3,
+        experiment = Experiment(dev, subject, session, feedback_app, session_path, practice, trial_time=20, break_time=3,
                                 prep_time=2, pause_time=10, ntrials = 6, nruns=5)  ## ntrials = 6, nruns = 5
         experiment.start()
 
@@ -53,9 +53,9 @@ if __name__ == "__main__":
         print("mainloop ended")
 
         feedback_helper.close()
-        # experiment.close()
-        experiment.go = False
-        experiment.thread.join()
+        experiment.close()
+        # experiment.go = False
+        # experiment.thread.join()
 
         dev.close()
 
