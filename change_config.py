@@ -69,4 +69,4 @@ def change_config(dev):
         if fs != 'base_sampling_rate':
             print('{0} = {1} Hz'.format(fs, fs_info[fs]))
 
-    dev.export_configuration(join("config", "saga_config_first_session.xml"))
+    dev.export_configuration(join("config", "saga_config_new_config.xml"))

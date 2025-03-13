@@ -16,7 +16,6 @@ class FeedbackHelper:
         if traditional:
             self.mean = None
             self.variance = None
-            self.calibrating = False
 
             self.classifier = TraditionalClassifier()
             ch_list = dev.get_device_active_channels()

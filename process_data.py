@@ -7,7 +7,7 @@ from TMSiFileFormats.file_formats.poly5_to_edf_converter import Poly5_to_EDF_Con
 import mne
 
 if __name__ == '__main__':
-    subject = 1
+    subject = 3
     session = 1
     folder = f"data/raw_files/S{subject}/Session{session}"
     processed_folder = f"data/processed_files/S{subject}/Session{session}"
@@ -15,7 +15,7 @@ if __name__ == '__main__':
     if not exists(processed_folder):
         makedirs(processed_folder)
 
-    converter = Poly5_to_EDF_Converter(batch=True, foldername=folder, f_c=[0.1, 250])
+    converter = Poly5_to_EDF_Converter(batch=True, foldername=folder, f_c=[0.1, 249])
 
     edf_list = []
     annotations_list = []

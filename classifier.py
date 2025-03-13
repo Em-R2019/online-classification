@@ -13,7 +13,7 @@ class Classifier:
 
         self.model_mirest = EEGNet(chans=18, classes=1, time_points=160, temp_kernel=32,
                                    f1=16, f2=32, d=2, pk1=8, pk2=16, dropout_rate=0.5, max_norm1=1, max_norm2=0.25)
-        state_dict = torch.load(join(model_path, "mirest.pt"), weights_only=False, map_location=torch.device('cpu'))
+        state_dict = torch.load(join(model_path, "restmi.pt"), weights_only=False, map_location=torch.device('cpu'))
         self.model_mirest.load_state_dict(state_dict, strict=False)
         self.model_mirest.eval()
 
