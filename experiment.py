@@ -58,7 +58,7 @@ class Experiment:
                     self.trial(practice_tasks[j], None, j)
                 else:
                     return
-
+            self.annotations = []
             self.text("End of practice", 3)
             self.text("˄ = move or imagine \n˅ = relax \no = break", 0)
 

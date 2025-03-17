@@ -54,8 +54,6 @@ if __name__ == "__main__":
 
         feedback_helper.close()
         experiment.close()
-        # experiment.go = False
-        # experiment.thread.join()
 
         dev.close()
 
