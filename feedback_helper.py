@@ -1,4 +1,6 @@
 import time
+from os.path import join
+
 import numpy as np
 import torch
 from scipy import signal
@@ -11,7 +13,7 @@ from TMSiSDK.device.tmsi_device_enums import MeasurementType
 
 
 class FeedbackHelper:
-    def __init__(self, model_path, dev, traditional=False):
+    def __init__(self, subject, session, dev, traditional=False):
         self.traditional = traditional
         if traditional:
             self.mean = None
@@ -27,7 +29,7 @@ class FeedbackHelper:
                     surrounding_channels.append(idx)
             self.surrounding_channels = surrounding_channels
         else:
-            self.classifier = classifier.Classifier(model_path)
+            self.classifier = classifier.Classifier(subject, int(session)-1)
         self.restmi = 0
         self.mimm = 0
 
@@ -178,7 +180,7 @@ class FeedbackHelper:
 
             if self.mean is not None:
                 # Normalize
-                restmi = (restmi - self.mean) / self.variance / 4 + 0.5
+                restmi = 1 - ((restmi - self.mean) / self.variance / 4 + 0.5)
                 if restmi < 0:
                     restmi = 0
                 elif restmi > 1:

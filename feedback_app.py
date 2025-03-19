@@ -108,13 +108,13 @@ class FeedbackApp(ttk.Frame):
 
     def generate_dummy_feedback(self):
         if self.mimm_height >= 700:
-            self.dummy_delta_mimm = - uniform(1, 3)
+            self.dummy_delta_mimm = - uniform(1, 5)
         elif self.mimm_height <= 0:
-            self.dummy_delta_mimm = uniform(1, 3)
+            self.dummy_delta_mimm = uniform(1, 5)
         if self.restmi_height >= 700:
-            self.dummy_delta_restmi = - uniform(1, 3)
+            self.dummy_delta_restmi = - uniform(1, 5)
         elif self.restmi_height <= 0:
-            self.dummy_delta_restmi = uniform(1, 3)
+            self.dummy_delta_restmi = uniform(1, 5)
 
         self.mimm_height += self.dummy_delta_mimm
         self.restmi_height += self.dummy_delta_restmi

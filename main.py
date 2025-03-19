@@ -40,7 +40,7 @@ if __name__ == "__main__":
         if not exists(session_path):
             makedirs(session_path)
 
-        feedback_helper = FeedbackHelper(model_path=join("classifiers", f"S{subject}"), dev=dev, traditional=traditional)
+        feedback_helper = FeedbackHelper(subject, session, dev=dev, traditional=traditional)
         root = tk.Tk()
         feedback_app = FeedbackApp(root, feedback_helper)
 

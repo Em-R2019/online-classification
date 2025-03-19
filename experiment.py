@@ -71,7 +71,7 @@ class Experiment:
                 random.shuffle(self.tasks)
 
                 print("start filewriter: " + datetime.now().strftime('%H:%M:%S'))
-                file_writer = FileWriter(FileFormat.poly5, join(self.session_path, f"S{self.subject}_Session{self.session}.poly5"))
+                file_writer = FileWriter(FileFormat.poly5, join(self.session_path, f"EEG_{self.label}_R{i}.poly5"))
                 file_writer.open(self.dev)
 
                 print("Start Run " + str(i+1))
@@ -125,7 +125,7 @@ class Experiment:
 
     def save(self, run):
         print("Save annotations")
-        with open(join(self.session_path, f'annotations_R{run}_{self.label}.txt'), 'a') as f:
+        with open(join(self.session_path, f'annotations_{self.label}_R{run}.txt'), 'a') as f:
             for annotation in self.annotations:
                 if self.label.upper() == "MM" and annotation[1] == "MI":
                     annotation[1] = "MM"
