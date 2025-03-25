@@ -11,4 +11,4 @@ class TraditionalClassifier:
         f, Pxx = signal.welch(c3, fs, nperseg=fs)
         ind_min = np.argmax(f > fmin) - 1
         ind_max = np.argmax(f > fmax) - 1
-        return np.trapz(Pxx[ind_min: ind_max], f[ind_min: ind_max])
+        return -1 * np.trapz(Pxx[ind_min: ind_max], f[ind_min: ind_max])

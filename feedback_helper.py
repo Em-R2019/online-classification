@@ -24,18 +24,21 @@ class FeedbackHelper:
             surrounding_channels = []
             for idx, ch in enumerate(ch_list):
                 if ch.get_channel_name() == "C3":
-                    self.c3 = idx
+                    self.c3 = idx - 1
                 if ch.get_channel_name() in ["CP5", "CP1", "FC5", "FC1"]:
-                    surrounding_channels.append(idx)
+                    surrounding_channels.append(idx - 1)
             self.surrounding_channels = surrounding_channels
         else:
             self.classifier = classifier.Classifier(subject, int(session)-1)
         self.restmi = 0
         self.mimm = 0
 
+        self.last_mimm = [0] * 5
+        self.last_restmi = [0] * 5
+
         self.sampling_frequency = dev.get_device_sampling_frequency()
 
-        self.sos_low = signal.butter(10, 80, 'lowpass', fs=self.sampling_frequency, output='sos')
+        self.sos_band = signal.butter(10, [0.1, 249], 'bandpass', fs=self.sampling_frequency, output='sos')
         self.sos_notch = signal.butter(10, [59.5, 60,5], 'bandstop', fs=self.sampling_frequency, output='sos')
 
         self.consumer = Consumer()
@@ -73,10 +76,10 @@ class FeedbackHelper:
         pointer_data_to_plot = buffer.pointer_buffer
 
         if pointer_data_to_plot >= self.sampling_frequency:
-            segment = data[:18, pointer_data_to_plot-self.sampling_frequency:pointer_data_to_plot]
+            segment = data[1:19, pointer_data_to_plot-self.sampling_frequency:pointer_data_to_plot]
         else:
-            segment = data[:18, pointer_data_to_plot- self.sampling_frequency:]
-            segment = np.concatenate((data[:18, :pointer_data_to_plot], segment), axis=1)
+            segment = data[1:19, pointer_data_to_plot- self.sampling_frequency:]
+            segment = np.concatenate((data[1:19, :pointer_data_to_plot], segment), axis=1)
 
         self.restmi, self.mimm = self.prediction(segment)
 
@@ -107,8 +110,8 @@ class FeedbackHelper:
 
         pointer_data_to_plot = buffer.pointer_buffer
 
-        segment = data[:18, pointer_data_to_plot:]
-        segment = np.concatenate((data[:18, :pointer_data_to_plot], segment), axis=1)
+        segment = data[1:19, pointer_data_to_plot:]
+        segment = np.concatenate((data[1:19, :pointer_data_to_plot], segment), axis=1)
 
         result = []
         for i in range(20):
@@ -127,8 +130,8 @@ class FeedbackHelper:
 
         pointer_data_to_plot = buffer.pointer_buffer
 
-        segment = data[:18, pointer_data_to_plot:]
-        segment = np.concatenate((data[:18, :pointer_data_to_plot], segment), axis=1)
+        segment = data[1:19, pointer_data_to_plot:]
+        segment = np.concatenate((data[1:19, :pointer_data_to_plot], segment), axis=1)
 
         for i in range(20):
             restmi, _ = self.prediction(segment[:, i*self.sampling_frequency//2: i*self.sampling_frequency//2 +
@@ -146,8 +149,8 @@ class FeedbackHelper:
 
         pointer_data_to_plot = buffer.pointer_buffer
 
-        segment = data[:18, pointer_data_to_plot:]
-        segment = np.concatenate((data[:18, :pointer_data_to_plot], segment), axis=1)
+        segment = data[1:19, pointer_data_to_plot:]
+        segment = np.concatenate((data[1:19, :pointer_data_to_plot], segment), axis=1)
 
         for i in range(20):
             restmi, _ = self.prediction(segment[:, i*self.sampling_frequency//2: i*self.sampling_frequency//2 +
@@ -180,7 +183,7 @@ class FeedbackHelper:
 
             if self.mean is not None:
                 # Normalize
-                restmi = 1 - ((restmi - self.mean) / self.variance / 4 + 0.5)
+                restmi = (restmi - self.mean) / self.variance / 4 + 0.5
                 if restmi < 0:
                     restmi = 0
                 elif restmi > 1:
@@ -189,12 +192,26 @@ class FeedbackHelper:
         else:
             segment = torch.tensor(segment).float().unsqueeze(0).unsqueeze(0)
             restmi, mimm = self.classifier.predict(segment)
-
+            restmi, mimm = self.smooth(restmi, mimm)
         return restmi, mimm
 
     def filter_buffer(self, buffer):
         data = buffer.dataset
-        data = signal.sosfilt(self.sos_low, data, axis=1)
-        data = signal.sosfilt(self.sos_notch, data, axis=1)
+        data = signal.sosfiltfilt(self.sos_band, data, axis=1)
+        data = signal.sosfiltfilt(self.sos_notch, data, axis=1)
         return data
 
+    def smooth(self, restmi, mimm):
+        self.last_mimm.pop(0)
+        self.last_mimm.append(mimm)
+        self.last_restmi.pop(0)
+        self.last_restmi.append(restmi)
+
+        mimm = np.mean(self.last_mimm)
+        restmi = np.mean(self.last_restmi)
+
+        return restmi, mimm
+
+    def reset(self):
+        self.last_mimm = [0] * 5
+        self.last_restmi = [0] * 5

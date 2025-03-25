@@ -46,7 +46,7 @@ class FeedbackApp(ttk.Frame):
             self.restmi_height = 700 * restmi
 
             if self.task == "MI" and not self.helper.traditional:
-                self.mimm_height = 700 * (1 - (1 / (1 + math.e ** (-8 * (mimm - .5)))))
+                self.mimm_height = 700 * ((mimm-1)**3+1)
             else:
                 self.mimm_height = self.restmi_height
 

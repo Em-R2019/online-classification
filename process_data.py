@@ -7,15 +7,15 @@ from TMSiFileFormats.file_formats.poly5_to_edf_converter import Poly5_to_EDF_Con
 import mne
 
 if __name__ == '__main__':
-    subject = 15
+    subject = 'me'
     session = 1
     folder = f"data/raw_files/S{subject}/Session{session}"
     processed_folder = f"data/processed_files/S{subject}/Session{session}"
-    classifier_folder = f"classifiers/S{subject}/Session{session}"
+    classifier_folder = f"classifiers/S{subject}"
 
     ## discard : [label, run, trial]
-    discard = [['feedback', 4, 1]]
-    #discard = []
+    # discard = [['feedback', 4, 1]]
+    discard = []
 
     if not exists(processed_folder):
         makedirs(processed_folder)

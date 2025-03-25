@@ -111,6 +111,7 @@ class Experiment:
             self.feedback_app.set_task("Break")
             self.feedback_app.give_feedback = False
             self.feedback_app.dummy_feedback = False
+            self.feedback_app.helper.reset()
             print("\nBreak")
             self.annotations.append([datetime.now().strftime('%H:%M:%S'), "Break"])
             time.sleep(self.break_time)
