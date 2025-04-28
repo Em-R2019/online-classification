@@ -1,10 +1,9 @@
-import math
 from random import uniform
 from tkinter import ttk
 import tkinter as tk
 
 class FeedbackApp(ttk.Frame):
-    def __init__(self, window, feedback_helper):
+    def __init__(self, window, feedback_helper, perturbation_client):
         super().__init__()
         self.helper = feedback_helper
         self.window = window
@@ -28,6 +27,10 @@ class FeedbackApp(ttk.Frame):
         self.give_feedback = False
         self.random_feedback = False
 
+        self.perturbation = False
+        self.perturbation_client = perturbation_client
+        self.perturbation_timer = 5
+
         # self.count = 0 # debug
 
         self.dummy_feedback = False
@@ -46,7 +49,11 @@ class FeedbackApp(ttk.Frame):
             self.restmi_height = 700 * restmi
 
             if self.task == "MI" and not self.helper.traditional:
-                self.mimm_height = 700 * ((mimm-1)**3+1)
+                if mimm > 1:
+                    mimm = 1
+
+                self.mimm_height = 700 * ((mimm-1)**3+1)  # easy
+                # self.mimm_height = 700 * (1-(mimm-1)**2)  # hard
             else:
                 self.mimm_height = self.restmi_height
 
@@ -54,6 +61,23 @@ class FeedbackApp(ttk.Frame):
 
             # self.mimm_height =+ self.count  # debug
             # self.count += 1 # debug
+
+            if self.perturbation:
+                if self.perturbation_timer <= 0:
+                    # print("perturbation timer ended")
+                    # restmi = uniform(0, 1)  # debug
+                    print(f"\rperturbation test: {restmi:.2f} task: {self.task}\n")   # debug
+
+                    if self.task == 'MI' and restmi > 0.6:
+                        self.perturbation_timer = uniform(3, 5)
+                        self.perturbation_client.send()
+
+                    elif self.task == 'Rest' and restmi < 0.4:
+                        self.perturbation_timer = uniform(3, 5)
+                        self.perturbation_client.send()
+                else:
+                    self.perturbation_timer -= 0.05
+                    # print(f"\r\nperturbation timer: {self.perturbation_timer}", end='')
 
         elif self.helper.calibrating:
             self.mimm_height += self.dummy_delta_mimm

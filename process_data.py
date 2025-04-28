@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from os import walk, makedirs
 from os.path import join, exists
@@ -7,31 +8,45 @@ from TMSiFileFormats.file_formats.poly5_to_edf_converter import Poly5_to_EDF_Con
 import mne
 
 if __name__ == '__main__':
-    subject = 'me'
-    session = 1
+    subject = 2
+    session = 2
     folder = f"data/raw_files/S{subject}/Session{session}"
+    raw_folder_rds = f"T:\staff-umbrella\RDS Thesis/raw_files/S{subject}/Session{session}"
+    # folder = f"T:\staff-umbrella\RDS Thesis\Raw data\S{subject}\Session{session}"
+    # filtered_folder = f"data/filtered_files/S{subject}/Session{session}"
+    filtered_folder = f"T:\staff-umbrella\RDS Thesis/filtered_files/S{subject}/Session{session}"
     processed_folder = f"data/processed_files/S{subject}/Session{session}"
+    processed_folder_rds = f"T:\staff-umbrella\RDS Thesis/processed_files/S{subject}/Session{session}"
     classifier_folder = f"classifiers/S{subject}"
 
     ## discard : [label, run, trial]
-    # discard = [['feedback', 4, 1]]
+    # discard = [['MI', 3, 2]]
     discard = []
 
+    if not exists(filtered_folder):
+        makedirs(filtered_folder)
     if not exists(processed_folder):
         makedirs(processed_folder)
     if not exists(classifier_folder):
         makedirs(classifier_folder)
+    if not exists(processed_folder_rds):
+        makedirs(processed_folder_rds)
+    if not exists(raw_folder_rds):
+        makedirs(raw_folder_rds)
 
-    converter = Poly5_to_EDF_Converter(batch=True, foldername=folder, f_c=[0.1, 249])
+    converter = Poly5_to_EDF_Converter(batch=True, foldername=folder, f_c=[0.1, 40])
 
     edf_list = []
     annotation_file_list = []
     for root, dirs, files in walk(folder):
         for file in files:
             if file.endswith('.edf'):
+                shutil.move(join(folder, file), join(filtered_folder, file))
                 edf_list.append(file)
+                shutil.copy(join(folder, file[:-4] + ".poly5"), join(raw_folder_rds, file[:-4] + ".poly5"))
             elif file.endswith('.txt'):
                 annotation_file_list.append(file)
+                shutil.copy(join(folder, file), join(raw_folder_rds, file))
     edf_list.sort(reverse=True)
 
     for annotations_path in annotation_file_list:
@@ -61,7 +76,7 @@ if __name__ == '__main__':
                 edf_run = edf.split('_')[2].split('-')[0]
                 edf_time = datetime.strptime(edf.split('-')[1].split('.')[0].split("_")[1], '%H%M%S')
                 if edf_time < first_annotation and edf_label == annotation_label and edf_run == annotation_run:
-                    raw = mne.io.read_raw_edf(join(folder, edf), preload=True)
+                    raw = mne.io.read_raw_edf(join(filtered_folder, edf), preload=True)
                     print(raw.info)
 
                     mne_annotations = []
@@ -82,5 +97,7 @@ if __name__ == '__main__':
 
                     raw = raw.set_annotations(mne.Annotations(onset=mne_annotations[:, 0], duration=mne_annotations[:, 2], description=mne_annotations[:, 1]))
 
-                    raw.save(join(processed_folder, f"S{subject}_Session{session}_{annotation_label}_{annotation_run}_eeg.fif"), overwrite=True)
+                    file_name = f"S{subject}_Session{session}_{annotation_label}_{annotation_run}_eeg.fif"
+                    raw.save(join(processed_folder, file_name), overwrite=True)
+                    shutil.copy(join(processed_folder, file_name), join(processed_folder_rds, file_name))
                     break

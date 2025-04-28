@@ -7,6 +7,7 @@ from os.path import join, exists
 from os import makedirs
 from TMSiSDK.tmsi_sdk import TMSiSDK, DeviceType, DeviceInterfaceType, DeviceState
 from TMSiSDK.tmsi_errors.error import TMSiError
+from perturbation_client import PerturbationClient
 
 if __name__ == "__main__":
     try:
@@ -41,8 +42,10 @@ if __name__ == "__main__":
             makedirs(session_path)
 
         feedback_helper = FeedbackHelper(subject, session, dev=dev, traditional=traditional)
+        perturbation_client = PerturbationClient()
         root = tk.Tk()
-        feedback_app = FeedbackApp(root, feedback_helper)
+
+        feedback_app = FeedbackApp(root, feedback_helper, perturbation_client)
 
         experiment = Experiment(dev, subject, session, feedback_app, session_path, practice, trial_time=20, break_time=3,
                                 prep_time=2, pause_time=10, ntrials = 6, nruns=5)  ## ntrials = 6, nruns = 5
@@ -53,6 +56,8 @@ if __name__ == "__main__":
         print("mainloop ended")
 
         feedback_helper.close()
+        perturbation_client.stop()
+
         experiment.close()
 
         dev.close()

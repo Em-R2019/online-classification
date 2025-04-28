@@ -2,7 +2,8 @@ from datetime import datetime
 import random
 import threading
 import time
-from os.path import join
+from glob import glob
+from os.path import join, exists
 
 from TMSiFileFormats.file_writer import FileWriter, FileFormat
 
@@ -48,9 +49,12 @@ class Experiment:
                 print(e)
                 return
 
+        if "pope" in self.label.lower():
+            self.feedback_app.perturbation_client.start()
+
         if self.practice:
             self.text("Start practice", 3)
-            practice_tasks = ["MI", "Rest"]
+            practice_tasks = ["MI", "Rest", "MI"]
             print("Start practice")
             self.countdown("practice")
             for j in range(len(practice_tasks)):
@@ -71,6 +75,8 @@ class Experiment:
                 random.shuffle(self.tasks)
 
                 print("start filewriter: " + datetime.now().strftime('%H:%M:%S'))
+                if len(glob(join(self.session_path, f"EEG_{self.label}_R{i}*"))) > 0:
+                    self.label = self.label + "1"
                 file_writer = FileWriter(FileFormat.poly5, join(self.session_path, f"EEG_{self.label}_R{i}.poly5"))
                 file_writer.open(self.dev)
 
@@ -102,6 +108,9 @@ class Experiment:
 
             if "feedback" in self.label.lower() or "pope" in self.label.lower():
                 self.feedback_app.give_feedback = True
+                if "pope" in self.label.lower():
+                    self.feedback_app.perturbation = True
+                    self.feedback_app.perturbation_timer = 5
             elif "MM" in self.label.upper() or "MI" in self.label.upper():
                 self.feedback_app.dummy_feedback = True
             print("\nStart Trial " + str(trial + 1) + " Task: " + task)
@@ -111,6 +120,7 @@ class Experiment:
             self.feedback_app.set_task("Break")
             self.feedback_app.give_feedback = False
             self.feedback_app.dummy_feedback = False
+            self.feedback_app.perturbation = False
             self.feedback_app.helper.reset()
             print("\nBreak")
             self.annotations.append([datetime.now().strftime('%H:%M:%S'), "Break"])
@@ -126,7 +136,12 @@ class Experiment:
 
     def save(self, run):
         print("Save annotations")
-        with open(join(self.session_path, f'annotations_{self.label}_R{run}.txt'), 'a') as f:
+        num = ''
+        if exists(join(self.session_path, f'annotations_{self.label}_R{run}.txt')):
+            num = '1'
+            if exists(join(self.session_path, f'annotations_{self.label}{num}_R{run}.txt')):
+                num = '2'
+        with open(join(self.session_path, f'annotations_{self.label}{num}_R{run}.txt'), 'a') as f:
             for annotation in self.annotations:
                 if self.label.upper() == "MM" and annotation[1] == "MI":
                     annotation[1] = "MM"

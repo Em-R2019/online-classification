@@ -1,6 +1,4 @@
 import time
-from os.path import join
-
 import numpy as np
 import torch
 from scipy import signal
@@ -38,8 +36,8 @@ class FeedbackHelper:
 
         self.sampling_frequency = dev.get_device_sampling_frequency()
 
-        self.sos_band = signal.butter(10, [0.1, 249], 'bandpass', fs=self.sampling_frequency, output='sos')
-        self.sos_notch = signal.butter(10, [59.5, 60,5], 'bandstop', fs=self.sampling_frequency, output='sos')
+        self.sos_band = signal.butter(10, [0.1, 40], 'bandpass', fs=self.sampling_frequency, output='sos')
+        # self.sos_notch = signal.butter(10, [59.5, 60,5], 'bandstop', fs=self.sampling_frequency, output='sos')
 
         self.consumer = Consumer()
         # Initialize thread
@@ -198,7 +196,7 @@ class FeedbackHelper:
     def filter_buffer(self, buffer):
         data = buffer.dataset
         data = signal.sosfiltfilt(self.sos_band, data, axis=1)
-        data = signal.sosfiltfilt(self.sos_notch, data, axis=1)
+        # data = signal.sosfiltfilt(self.sos_notch, data, axis=1)
         return data
 
     def smooth(self, restmi, mimm):
