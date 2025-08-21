@@ -52,8 +52,7 @@ class FeedbackApp(ttk.Frame):
                 if mimm > 1:
                     mimm = 1
 
-                self.mimm_height = 700 * ((mimm-1)**3+1)  # easy
-                # self.mimm_height = 700 * (1-(mimm-1)**2)  # hard
+                self.mimm_height = 700 * ((mimm-1)**3+1)
             else:
                 self.mimm_height = self.restmi_height
 
@@ -64,20 +63,19 @@ class FeedbackApp(ttk.Frame):
 
             if self.perturbation:
                 if self.perturbation_timer <= 0:
-                    # print("perturbation timer ended")
+                    print("perturbation timer ended")
                     # restmi = uniform(0, 1)  # debug
-                    print(f"\rperturbation test: {restmi:.2f} task: {self.task}\n")   # debug
+                    # print(f"\rperturbation test: {restmi:.2f} task: {self.task}\n")   # debug
 
-                    if self.task == 'MI' and restmi > 0.6:
+                    if self.task == 'MI' and restmi > 0.75:
                         self.perturbation_timer = uniform(3, 5)
                         self.perturbation_client.send()
 
-                    elif self.task == 'Rest' and restmi < 0.4:
+                    elif self.task == 'Rest' and restmi < 0.25:
                         self.perturbation_timer = uniform(3, 5)
                         self.perturbation_client.send()
-                else:
-                    self.perturbation_timer -= 0.05
-                    # print(f"\r\nperturbation timer: {self.perturbation_timer}", end='')
+
+                self.perturbation_timer -= 0.04
 
         elif self.helper.calibrating:
             self.mimm_height += self.dummy_delta_mimm

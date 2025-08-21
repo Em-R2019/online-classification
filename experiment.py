@@ -70,7 +70,7 @@ class Experiment:
             input()
 
         self.text("Start experiment", 2)
-        for i in range(self.nruns):
+        for i in range(1, self.nruns+1):
             if self.go:
                 random.shuffle(self.tasks)
 
@@ -80,8 +80,12 @@ class Experiment:
                 file_writer = FileWriter(FileFormat.poly5, join(self.session_path, f"EEG_{self.label}_R{i}.poly5"))
                 file_writer.open(self.dev)
 
-                print("Start Run " + str(i+1))
-                self.countdown("run " + str(i+1))
+                # if "pope" in self.label.lower() and i == 1:
+                #     print("Release handle")
+                #     self.text("Release handle", 5)
+
+                print("Start Run " + str(i))
+                self.countdown("run " + str(i))
 
                 for j in range(self.ntrials):
                     if self.go:
@@ -94,7 +98,7 @@ class Experiment:
                 self.save(i)
             else:
                 return
-            if i < self.nruns - 1:
+            if i < self.nruns:
                 self.text("Break", self.pause_time-4)
 
         print("End experiment " + self.label)
@@ -110,7 +114,7 @@ class Experiment:
                 self.feedback_app.give_feedback = True
                 if "pope" in self.label.lower():
                     self.feedback_app.perturbation = True
-                    self.feedback_app.perturbation_timer = 5
+                    self.feedback_app.perturbation_timer = 4
             elif "MM" in self.label.upper() or "MI" in self.label.upper():
                 self.feedback_app.dummy_feedback = True
             print("\nStart Trial " + str(trial + 1) + " Task: " + task)

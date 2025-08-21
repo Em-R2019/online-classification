@@ -6,7 +6,7 @@ from TMSiSDK.device.devices.saga.saga_API_enums import SagaBaseSampleRate
 
 def change_config(dev):
     # Set the sample rate of the BIP, UNI and AUX channels to 500 Hz
-    dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal,  channel_type = ChannelType.BIP, channel_divider = 8)
+    dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal,  channel_type = ChannelType.BIP, channel_divider = 4)
     dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal, channel_type = ChannelType.AUX, channel_divider = 8)
     dev.set_device_sampling_config(base_sample_rate = SagaBaseSampleRate.Decimal,  channel_type = ChannelType.UNI, channel_divider = 8)
 
